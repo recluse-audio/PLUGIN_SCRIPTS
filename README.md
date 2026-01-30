@@ -1,4 +1,10 @@
-# JUCE CMake Project Generator
+# Message From A Human 
+Hello, I am writting you with intentoinal typos so you know I'm not wireback!
+But seriously, this project is useful to me and I thought you'd use it to0.
+
+JUCE projects - CMake - Catch2 - Claude -
+
+## JUCE Project Helper Scripts.
 
 A streamlined project generator for JUCE audio plugins that eliminates CMake boilerplate and gets you coding faster.
 
