@@ -38,7 +38,7 @@ Creates the standard directory structure:
 - TESTS/ - Unit tests
 - TESTS/TEST_UTILS/ - Test utilities
 - BUILD/ - Build artifacts (with .gitkeep)
-- SCRIPTS/ - Build scripts
+- HELPER_SCRIPTS/ - Build scripts
 - NOTES/ - Development notes
 - DIAGRAMS/ - Architecture diagrams
 

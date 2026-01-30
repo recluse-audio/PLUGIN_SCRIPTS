@@ -9,21 +9,21 @@ from pathlib import Path
 
 def copy_scripts(scripts_source_dir: Path, project_root: Path) -> None:
     """
-    Copy all build scripts from PLUGIN_SCRIPTS to the project SCRIPTS directory.
+    Copy all build scripts from HELPER_SCRIPTS to the project SCRIPTS directory.
 
     Args:
-        scripts_source_dir: Path to the SCRIPTS directory containing PLUGIN_SCRIPTS folder
+        scripts_source_dir: Path to the SCRIPTS directory containing HELPER_SCRIPTS folder
         project_root: Path to the project root directory
     """
-    # Look for PLUGIN_SCRIPTS folder first, fall back to source directory
-    plugin_scripts_dir = scripts_source_dir / "PLUGIN_SCRIPTS"
+    # Look for HELPER_SCRIPTS folder first, fall back to source directory
+    plugin_scripts_dir = scripts_source_dir / "HELPER_SCRIPTS"
     if plugin_scripts_dir.exists() and plugin_scripts_dir.is_dir():
         source_dir = plugin_scripts_dir
     else:
         # Fall back to source directory, but exclude setup-related files
         source_dir = scripts_source_dir
 
-    dest_scripts_dir = project_root / "SCRIPTS"
+    dest_scripts_dir = project_root / "HELPER_SCRIPTS"
     dest_scripts_dir.mkdir(exist_ok=True)
 
     # Files and folders to exclude from copying
@@ -51,7 +51,7 @@ def copy_scripts(scripts_source_dir: Path, project_root: Path) -> None:
     if copied_count == 0:
         print(f"  Warning: No files found to copy from {source_dir}")
     else:
-        print(f"  Total: Copied {copied_count} file(s) to SCRIPTS/")
+        print(f"  Total: Copied {copied_count} file(s) to HELPER_SCRIPTS/")
 
 
 if __name__ == "__main__":
