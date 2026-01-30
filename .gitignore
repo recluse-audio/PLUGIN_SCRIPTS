@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments (in case contributors use them)
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing/development artifacts
+test_output/
+example_projects/
+*.log
+
+# AI assistant context (committed once, then local changes ignored)
+CLAUDE.md
+
+# Don't ignore the PLUGIN_SCRIPTS folder (it's part of the distribution)
+!PLUGIN_SCRIPTS/
+!SETUP_SCRIPTS/
