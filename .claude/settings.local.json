@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir /s /b \"C:\\\\REPOS\\\\PLUGIN_PROJECTS\\\\GrainMaker\")"
+    ]
+  }
+}
