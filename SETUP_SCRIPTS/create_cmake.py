@@ -118,7 +118,10 @@ if(BUILD_TESTS OR TARGET Tests)
     # Test executable
     add_executable(Tests)
     include(CMAKE/TESTS.cmake)
-    target_sources(Tests PRIVATE ${{TEST_SOURCES}})
+    include(CMAKE/SOURCES.cmake)
+    target_sources(Tests PRIVATE ${{TEST_SOURCES}} ${{SOURCES}})
+
+    target_include_directories(Tests PRIVATE ${{CMAKE_CURRENT_SOURCE_DIR}})
 
     target_link_libraries(Tests PRIVATE
         Catch2::Catch2WithMain
@@ -128,6 +131,14 @@ if(BUILD_TESTS OR TARGET Tests)
     )
 
     target_compile_features(Tests PRIVATE cxx_std_20)
+
+    # Define JUCE plugin macros for Tests target
+    target_compile_definitions(Tests PRIVATE
+        JucePlugin_Name="{PROJECT_NAME}"
+        JucePlugin_WantsMidiInput=0
+        JucePlugin_ProducesMidiOutput=0
+        JucePlugin_IsMidiEffect=0
+    )
 
     # Enable CTest
     include(CTest)

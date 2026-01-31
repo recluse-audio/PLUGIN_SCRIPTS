@@ -113,7 +113,7 @@ def main():
         print(f"Scanning test folders: {', '.join(test_folders)}")
     else:
         print("Warning: No TESTS folders found")
-    generate_files_list(test_folders, 'CMAKE/TESTS.cmake', 'TESTS')
+    generate_files_list(test_folders, 'CMAKE/TESTS.cmake', 'TEST_SOURCES')
 
 
 if __name__ == '__main__':

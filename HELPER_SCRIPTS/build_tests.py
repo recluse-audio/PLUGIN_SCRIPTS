@@ -26,7 +26,7 @@ def main():
     regenerate_cmake_lists()
 
     try:
-        run(["cmake", "-DCMAKE_BUILD_TYPE=Debug", ".."], Path("BUILD"))
+        run(["cmake", "-DCMAKE_BUILD_TYPE=Debug", "-DBUILD_TESTS=ON", ".."], Path("BUILD"))
         run(["cmake", "--build", ".", "--target", "Tests"], Path("BUILD"))
     except Exception:
         beep(success=False)
