@@ -14,6 +14,7 @@ from __future__ import annotations
 import subprocess
 import sys
 from pathlib import Path
+from build_complete import beep
 
 # Get plugin name from current working directory
 PLUGIN_NAME = Path.cwd().name
@@ -57,4 +58,13 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    try:
+        result = main()
+        beep(success=True)
+        sys.exit(result)
+    except subprocess.CalledProcessError:
+        beep(success=False)
+        raise
+    except Exception:
+        beep(success=False)
+        raise

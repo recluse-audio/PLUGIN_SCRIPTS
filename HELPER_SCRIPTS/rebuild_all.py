@@ -22,6 +22,7 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
+from build_complete import beep
 
 # Get plugin name from current working directory
 PLUGIN_NAME = Path.cwd().name
@@ -111,7 +112,13 @@ def main() -> int:
 
 if __name__ == "__main__":
     try:
-        raise SystemExit(main())
+        result = main()
+        beep(success=True)
+        sys.exit(result)
     except subprocess.CalledProcessError as e:
+        beep(success=False)
         print(f"\nBuild failed with exit code {e.returncode}", file=sys.stderr)
+        raise
+    except Exception:
+        beep(success=False)
         raise
