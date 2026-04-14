@@ -49,6 +49,11 @@ out/
 *.xcworkspace/
 DerivedData/
 
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
 # Operating system
 .DS_Store
 Thumbs.db
