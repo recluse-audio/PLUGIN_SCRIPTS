@@ -26,6 +26,9 @@ def create_directories(project_root: Path) -> List[str]:
         "TESTS/TEST_UTILS",
         "BUILD",
         "HELPER_SCRIPTS",
+        "INSTALLERS",
+        "INSTALLERS/PC",
+        "INSTALLERS/MAC",
         "NOTES",
         "DIAGRAMS",
     ]
