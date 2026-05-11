@@ -54,6 +54,16 @@ __pycache__/
 *.pyc
 *.pyo
 
+# Signed build output
+SIGNED/PC/OUTPUT/
+SIGNED/MAC/OUTPUT/
+
+# Installer build output
+INSTALLERS/PC/BUILD/
+
+# Release packages
+RELEASE/
+
 # Operating system
 .DS_Store
 Thumbs.db

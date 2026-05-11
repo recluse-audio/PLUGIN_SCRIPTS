@@ -2,23 +2,24 @@
 """
 Generates an Inno Setup script (.iss) for a JUCE plugin project.
 
-Places the script at INSTALLERS/PC/<PluginName>.iss.
-The plugin name is derived from the repo directory name.
+Places the script at INSTALLERS/PC/<ProductName>.iss.
+The plugin/product name and CMake target are parsed from CMakeLists.txt.
 The version is read from VERSION.txt.
-The AppId GUID is derived deterministically from the plugin name.
+The AppId GUID is derived deterministically from the product name.
 """
 
+import re
 import uuid
 from pathlib import Path
 
 
 ISS_TEMPLATE = """\
-#define MyAppName "{plugin_name}"
+#define MyAppName "{product_name}"
 #define MyAppVersion "{version}"
 #define MyAppPublisher "recluse-audio"
 #define MyAppURL "https://recluse-audio.com"
-#define VST3Source "{vst3_source}"
-#define OutputDir "{output_dir}"
+#define VST3Source SourcePath + "\\..\\..\\BUILD\\{target}_artefacts\\Release\\VST3\\{product_name}.vst3"
+#define OutputDir SourcePath + "\\BUILD"
 
 [Setup]
 AppId={{{app_id}}}
@@ -26,9 +27,11 @@ AppName={{#MyAppName}}
 AppVersion={{#MyAppVersion}}
 AppPublisher={{#MyAppPublisher}}
 AppPublisherURL={{#MyAppURL}}
-DefaultDirName={{commoncf}}\\VST3
+DefaultDirName={{autopf}}\\{{#MyAppPublisher}}\\{{#MyAppName}}
+UninstallFilesDir={{app}}
 DefaultGroupName={{#MyAppName}}
 DisableDirPage=yes
+DisableProgramGroupPage=yes
 OutputDir={{#OutputDir}}
 OutputBaseFilename={{#MyAppName}}_v{{#MyAppVersion}}_Windows_Installer
 Compression=lzma
@@ -55,36 +58,53 @@ def read_version(project_root: Path) -> str:
     return "0.0.1"
 
 
-def make_app_id(plugin_name: str) -> str:
-    """Generate a stable GUID from the plugin name."""
-    return str(uuid.uuid5(uuid.NAMESPACE_DNS, f"recluse-audio.{plugin_name}")).upper()
+def get_plugin_names(project_root: Path) -> tuple[str, str]:
+    """
+    Parse CMakeLists.txt for the CMake target name and PRODUCT_NAME.
+
+    Returns (target, product_name). Falls back to directory name if
+    CMakeLists.txt doesn't exist or can't be parsed.
+    """
+    cmake_file = project_root / "CMakeLists.txt"
+    fallback = project_root.name
+
+    if not cmake_file.exists():
+        return fallback, fallback
+
+    text = cmake_file.read_text(encoding="utf-8")
+
+    m = re.search(r'project\(\s*(\S+)', text)
+    target = m.group(1) if m else fallback
+
+    m = re.search(r'PRODUCT_NAME\s+"([^"]+)"', text)
+    product_name = m.group(1) if m else target
+
+    return target, product_name
+
+
+def make_app_id(product_name: str) -> str:
+    """Generate a stable GUID from the product name."""
+    return str(uuid.uuid5(uuid.NAMESPACE_DNS, f"recluse-audio.{product_name}")).upper()
 
 
 def create_installer_pc(project_root: Path) -> None:
-    plugin_name = project_root.name
+    target, product_name = get_plugin_names(project_root)
     version = read_version(project_root)
-    app_id = make_app_id(plugin_name)
-
-    vst3_source = (
-        str(project_root / "BUILD" / f"{plugin_name}_artefacts" / "Release" / "VST3" / f"{plugin_name}.vst3")
-        .replace("/", "\\")
-    )
-    output_dir = r"C:\STORAGE\INSTALLERS"
+    app_id = make_app_id(product_name)
 
     iss_content = ISS_TEMPLATE.format(
-        plugin_name=plugin_name,
+        product_name=product_name,
+        target=target,
         version=version,
         app_id=app_id,
-        vst3_source=vst3_source,
-        output_dir=output_dir,
     )
 
-    out_path = project_root / "INSTALLERS" / "PC" / f"{plugin_name}.iss"
+    out_path = project_root / "INSTALLERS" / "PC" / f"{product_name}.iss"
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(iss_content, encoding="utf-8")
-    print(f"  Created INSTALLERS/PC/{plugin_name}.iss")
+    print(f"  Created INSTALLERS/PC/{product_name}.iss")
+    print(f"  Target: {target}, Product: {product_name}")
     print(f"  AppId: {{{app_id}}}")
-    print(f"  VST3Source: {vst3_source}")
 
 
 if __name__ == "__main__":
