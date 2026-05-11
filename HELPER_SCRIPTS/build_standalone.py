@@ -3,45 +3,14 @@
 from __future__ import annotations
 
 import argparse
-import shutil
 import subprocess
 import sys
 from pathlib import Path
 
 from _plugin_root import find_plugin_root
+from build_complete import find_cmake
 
 PLUGIN_NAME = find_plugin_root().name
-
-
-def find_cmake() -> str:
-    candidates: list[str] = []
-
-    if sys.platform == "darwin":
-        candidates += [
-            "/opt/cmake-3.24.1/CMake.app/Contents/bin/cmake",
-            "/opt/cmake/CMake.app/Contents/bin/cmake",
-            "/Applications/CMake.app/Contents/bin/cmake",
-        ]
-    elif sys.platform.startswith("win"):
-        candidates += [
-            r"C:\Program Files\CMake\bin\cmake.exe",
-            r"C:\Program Files (x86)\CMake\bin\cmake.exe",
-        ]
-    else:
-        candidates += [
-            "/usr/local/bin/cmake",
-            "/usr/bin/cmake",
-        ]
-
-    for candidate in candidates:
-        if Path(candidate).exists():
-            return candidate
-
-    cmake = shutil.which("cmake")
-    if cmake:
-        return cmake
-
-    raise FileNotFoundError("Could not find cmake on this machine.")
 
 
 def run(cmd: list[str], cwd: Path) -> None:
@@ -49,11 +18,13 @@ def run(cmd: list[str], cwd: Path) -> None:
     subprocess.run(cmd, cwd=str(cwd), check=True)
 
 
-def regenerate() -> None:
-    regen = Path(__file__).parent / "regenSource.py"
-    if regen.exists():
+def regenerate_cmake_lists() -> None:
+    regen_script = Path(__file__).parent / "regenSource.py"
+    if regen_script.exists():
         print("Regenerating CMake file lists...")
-        subprocess.run([sys.executable, str(regen)], check=True)
+        subprocess.run([sys.executable, str(regen_script)], check=True)
+    else:
+        print("Warning: regenSource.py not found, skipping regeneration")
 
 
 def parse_args() -> argparse.Namespace:
@@ -70,21 +41,20 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     args = parse_args()
 
-    root = find_plugin_root()
-    build = root / "BUILD"
-    cmake = find_cmake()
+    regenerate_cmake_lists()
 
+    root = find_plugin_root()
+    build_dir = root / "BUILD"
+    build_dir.mkdir(parents=True, exist_ok=True)
+
+    cmake = find_cmake()
     print(f"Using cmake: {cmake}")
     print(f"Using config: {args.config}")
-
-    regenerate()
-
-    build.mkdir(parents=True, exist_ok=True)
 
     configure_cmd = [
         cmake,
         "-S", str(root),
-        "-B", str(build),
+        "-B", str(build_dir),
     ]
 
     if not sys.platform.startswith("win"):
@@ -94,8 +64,8 @@ def main() -> int:
 
     build_cmd = [
         cmake,
-        "--build", str(build),
-        "--target", f"{PLUGIN_NAME}_VST3",
+        "--build", str(build_dir),
+        "--target", f"{PLUGIN_NAME}_Standalone",
     ]
 
     if sys.platform.startswith("win"):

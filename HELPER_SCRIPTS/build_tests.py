@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 from __future__ import annotations
-import argparse, shutil, subprocess, sys
-from pathlib import Path
-from build_complete import find_cmake, beep
-from _plugin_root import find_plugin_root
 
-PLUGIN_ROOT = find_plugin_root()
+import argparse
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+
+from _plugin_root import find_plugin_root
+from build_complete import find_cmake, beep
 
 
 def run(cmd: list[str], cwd: Path) -> None:
@@ -46,6 +49,11 @@ def parse_args() -> argparse.Namespace:
         default="Debug",
         help="Build config (default: Debug)",
     )
+    ap.add_argument(
+        "--clean",
+        action="store_true",
+        help="Clean build artifacts before building",
+    )
     return ap.parse_args()
 
 
@@ -53,7 +61,7 @@ def main() -> int:
     args = parse_args()
     regenerate_cmake_lists()
 
-    root = PLUGIN_ROOT
+    root = find_plugin_root()
     build_dir = root / "BUILD"
     build_dir.mkdir(parents=True, exist_ok=True)
 
@@ -71,6 +79,8 @@ def main() -> int:
         build_cmd = [cmake, "--build", str(build_dir), "--target", "Tests"]
         if sys.platform.startswith("win"):
             build_cmd += ["--config", args.config]
+        if args.clean:
+            build_cmd.append("--clean-first")
         run(build_cmd, cwd=root)
     except Exception:
         beep(success=False)

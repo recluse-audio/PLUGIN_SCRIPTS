@@ -23,11 +23,11 @@ import subprocess
 import sys
 from pathlib import Path
 
-from build_complete import find_cmake, beep
 from _plugin_root import find_plugin_root
+from build_complete import find_cmake, beep
 
-PLUGIN_ROOT = find_plugin_root()
-PLUGIN_NAME = PLUGIN_ROOT.name
+# Plugin name must match the CMake target defined in CMakeLists.txt
+PLUGIN_NAME = find_plugin_root().name
 
 
 def run(cmd: list[str], cwd: Path | None = None) -> None:
@@ -58,6 +58,7 @@ def regenerate_cmake_lists() -> None:
 
 
 def is_multi_config_generator(gen: str | None) -> bool:
+    """Heuristic: VS and Xcode are multi-config; Ninja/Makefiles are typically single-config."""
     if not gen:
         return False
     g = gen.lower()
@@ -67,10 +68,11 @@ def is_multi_config_generator(gen: str | None) -> bool:
 def get_targets() -> list[str]:
     """Return the list of plugin format targets to build for the current platform.
 
-    The shared code target must be first — all format targets link against it.
+    The shared-code lib target (named PLUGIN_NAME) must be first — all format
+    targets link against it.
     """
     targets = [
-        f"{PLUGIN_NAME}",           # shared code lib — must build first
+        f"{PLUGIN_NAME}",          # shared code lib — must build first
         f"{PLUGIN_NAME}_Standalone",
         f"{PLUGIN_NAME}_VST3",
     ]
@@ -81,50 +83,64 @@ def get_targets() -> list[str]:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--source-dir", default=".", help="CMake source dir (default: .)")
-    ap.add_argument("--build-dir", default="BUILD", help="Build dir (default: BUILD)")
-    ap.add_argument("--config", default=None, help="Build config (Debug/Release/etc).")
+    ap.add_argument("--source-dir", default=None, help="CMake source dir (default: plugin root)")
+    ap.add_argument("--build-dir", default=None, help="Build dir (default: <plugin root>/BUILD)")
+    ap.add_argument("--config", default=None, help="Build config (Debug/Release/etc). Needed for VS/Xcode.")
     ap.add_argument("--clean", action="store_true", help="Delete build dir before configuring.")
-    ap.add_argument("--generator", default=None, help='CMake generator.')
+    ap.add_argument("--generator", default=None, help='CMake generator, e.g. "Ninja", "Unix Makefiles", "Visual Studio 17 2022".')
     ap.add_argument("--parallel", type=int, default=0, help="Parallel jobs (0 = let CMake decide).")
-    ap.add_argument("--verbose", action="store_true", help="Enable verbose build output.")
+    ap.add_argument("--verbose", action="store_true", help="Enable verbose build output where supported.")
     args, unknown = ap.parse_known_args()
 
-    src_dir = Path(args.source_dir).resolve()
-    bld_dir = Path(args.build_dir).resolve()
+    plugin_root = find_plugin_root()
+    src_dir = Path(args.source_dir).resolve() if args.source_dir else plugin_root
+    bld_dir = Path(args.build_dir).resolve() if args.build_dir else (plugin_root / "BUILD")
     cmake = find_cmake()
+
     print(f"Using cmake: {cmake}")
 
+    # Regenerate CMake file lists before building
     regenerate_cmake_lists()
 
     if args.clean and bld_dir.exists():
         rmtree(bld_dir)
+
     bld_dir.mkdir(parents=True, exist_ok=True)
+
+    # Configure (once)
+    cfg_cmd = [cmake, "-S", str(src_dir), "-B", str(bld_dir)]
+    if args.generator:
+        cfg_cmd += ["-G", args.generator]
 
     gen = args.generator
     multi = is_multi_config_generator(gen)
 
-    cfg_cmd = [cmake, "-S", str(src_dir), "-B", str(bld_dir)]
-    if gen:
-        cfg_cmd += ["-G", gen]
+    # For single-config generators, set CMAKE_BUILD_TYPE at configure time
     if not multi and not sys.platform.startswith("win"):
-        cfg_cmd += [f"-DCMAKE_BUILD_TYPE={args.config or 'Release'}"]
-    cfg_cmd += unknown
+        config = args.config or "Release"
+        cfg_cmd += [f"-DCMAKE_BUILD_TYPE={config}"]
+
+    cfg_cmd += unknown  # allow passing extra -DVAR=VALUE etc.
     run(cfg_cmd)
 
+    # Build each target
     targets = get_targets()
     print(f"\nBuilding targets: {', '.join(targets)}\n")
 
     for target in targets:
         build_cmd = [cmake, "--build", str(bld_dir), "--target", target]
+
         if sys.platform.startswith("win"):
             build_cmd += ["--config", args.config or "Debug"]
         elif multi:
             build_cmd += ["--config", args.config or "Release"]
-        if args.parallel > 0:
+
+        if args.parallel and args.parallel > 0:
             build_cmd += ["-j", str(args.parallel)]
+
         if args.verbose:
             build_cmd += ["--verbose"]
+
         run(build_cmd)
 
     print(f"\nAll targets built successfully.")
@@ -133,7 +149,12 @@ def main() -> int:
 
 if __name__ == "__main__":
     try:
-        raise SystemExit(main())
+        rc = main()
+        if rc == 0:
+            beep(success=True)
+        else:
+            beep(success=False)
+        raise SystemExit(rc)
     except subprocess.CalledProcessError as e:
         beep(success=False)
         print(f"\nBuild failed with exit code {e.returncode}", file=sys.stderr)
