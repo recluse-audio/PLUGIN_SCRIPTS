@@ -24,8 +24,10 @@ import sys
 from pathlib import Path
 
 from build_complete import find_cmake, beep
+from _plugin_root import find_plugin_root
 
-PLUGIN_NAME = Path(__file__).resolve().parents[1].name
+PLUGIN_ROOT = find_plugin_root()
+PLUGIN_NAME = PLUGIN_ROOT.name
 
 
 def run(cmd: list[str], cwd: Path | None = None) -> None:

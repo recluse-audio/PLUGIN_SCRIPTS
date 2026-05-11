@@ -7,9 +7,11 @@ import subprocess
 import sys
 from pathlib import Path
 
+from _plugin_root import find_plugin_root
+
 
 def main() -> int:
-    signed_dir = Path(__file__).resolve().parents[1] / "SIGNED"
+    signed_dir = find_plugin_root() / "SIGNED"
 
     if sys.platform == "darwin":
         script = signed_dir / "release_workflow_mac.py"

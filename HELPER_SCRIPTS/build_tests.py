@@ -3,6 +3,9 @@ from __future__ import annotations
 import argparse, subprocess, sys
 from pathlib import Path
 from build_complete import find_cmake, beep
+from _plugin_root import find_plugin_root
+
+PLUGIN_ROOT = find_plugin_root()
 
 
 def run(cmd: list[str], cwd: Path) -> None:
@@ -34,7 +37,7 @@ def main() -> int:
     args = parse_args()
     regenerate_cmake_lists()
 
-    root = Path(__file__).resolve().parents[1]
+    root = PLUGIN_ROOT
     build_dir = root / "BUILD"
     build_dir.mkdir(parents=True, exist_ok=True)
 

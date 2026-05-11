@@ -6,9 +6,11 @@ import subprocess
 import sys
 from pathlib import Path
 
+from _plugin_root import find_plugin_root
+
 
 def main() -> int:
-    installers_dir = Path(__file__).resolve().parents[1] / "INSTALLERS"
+    installers_dir = find_plugin_root() / "INSTALLERS"
 
     if sys.platform == "darwin":
         script = installers_dir / "MAC" / "build_mac_installer.py"
