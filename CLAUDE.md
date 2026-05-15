@@ -23,7 +23,7 @@ Runtime scripts auto-detect plugin name from `Path.cwd().name` or `Path(__file__
 ## `regenSource.py` Auto-Discovery
 
 Build scripts call `regenSource.py` before building. Scans:
-- **Sources**: top-level `SOURCE/` only. Submodule SOURCE trees are NOT auto-scanned (see `discover_source_folders` in the script). If a submodule needs its sources compiled in, the consuming project must list them explicitly via a hand-maintained CMake file (e.g. `CMAKE/RD_DSP_SOURCES.cmake` in the RD repo) and a wrapper include like `CMAKE/CONSUMER_SOURCES.cmake` that downstream plugins can pull in without being clobbered by regen.
+- **Sources**: top-level `SOURCE/` only. Submodule SOURCE trees are NOT auto-scanned (see `discover_source_folders` in the script). If a submodule needs its sources compiled in, the right pattern is for the submodule itself to ship a `CMakeLists.txt` exposing a static-lib target; consumers then `add_subdirectory` it and `target_link_libraries` against the target (same model as JUCE). Hand-maintaining a parallel source list in the consumer (e.g. an older `RD_DSP_SOURCES.cmake` workaround) is the wrong shape — it goes stale on every submodule change and forces every downstream repo to repeat the list.
 - **Tests**: top-level `TESTS/` plus `SUBMODULES/*/TESTS/TEST_UTILS` (shared test helpers only — not the submodule's own `TEST_CASE` files).
 
 Writes `CMAKE/SOURCES.cmake` and `CMAKE/TESTS.cmake`. Users never hand-edit those two file lists — they get overwritten on every regen. Anything that must survive regen lives in a separately named `.cmake` file.
